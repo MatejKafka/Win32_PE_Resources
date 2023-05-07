@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(win32_pe_resources)
+project(Win32_PE_Resources)
 
 set(CMAKE_CXX_STANDARD 20)
 
