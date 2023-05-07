@@ -10,35 +10,45 @@ namespace PeResources {
     using RName = LPWSTR;
     using ResourceID = uint16_t;
 
-    class LibraryModule {
+
+    class LibraryHandle {
     private:
         HMODULE handle;
 
     public:
-        explicit LibraryModule(const wchar_t* file_path)
+        explicit LibraryHandle(const wchar_t* file_path)
                 : handle(CHECK_ERROR(LoadLibrary(file_path))) {}
 
         // prevent copying
-        LibraryModule(const LibraryModule&) = delete;
-        LibraryModule& operator=(const LibraryModule&) = delete;
+        LibraryHandle(const LibraryHandle&) = delete;
+        LibraryHandle& operator=(const LibraryHandle&) = delete;
 
         operator HMODULE() const { // NOLINT(google-explicit-constructor)
             return handle;
         }
 
-        ~LibraryModule() {
+        ~LibraryHandle() {
             CHECK_ERROR_V(false, FreeLibrary(handle));
         }
+    };
+
+
+    class LibraryModule {
+    private:
+        LibraryHandle handle;
+
+    public:
+        explicit LibraryModule(const wchar_t* file_path) : handle(file_path) {}
 
         std::span<std::byte> load_resource(RType resource_type, RName resource_name) const {
             // locate the resource in the loaded module
-            HRSRC resource_handle = CHECK_ERROR(FindResource(*this, resource_name, resource_type));
+            HRSRC resource_handle = CHECK_ERROR(FindResource(handle, resource_name, resource_type));
             // load the resource into global memory
-            HGLOBAL loaded_resource = CHECK_ERROR(LoadResource(*this, resource_handle));
+            HGLOBAL loaded_resource = CHECK_ERROR(LoadResource(handle, resource_handle));
 
             // retrieve the resource pointer and size
             void* resource_ptr = CHECK_ERROR(LockResource(loaded_resource));
-            auto resource_size = CHECK_ERROR_V(0, SizeofResource(*this, resource_handle));
+            auto resource_size = CHECK_ERROR_V(0, SizeofResource(handle, resource_handle));
             return {(std::byte*)resource_ptr, resource_size};
         }
 
@@ -55,13 +65,11 @@ namespace PeResources {
             };
 
             // pass callback through the extra param and restore it in the callback lambda
-            CHECK_ERROR_V(false, EnumResourceNamesW(*this, resource_type, enum_fn,
+            CHECK_ERROR_V(false, EnumResourceNamesW(handle, resource_type, enum_fn,
                                                     std::bit_cast<LONG_PTR>((void*)&callback)));
         }
-
-    private:
-
     };
+
 
     class ResourceUpdater {
     private:
