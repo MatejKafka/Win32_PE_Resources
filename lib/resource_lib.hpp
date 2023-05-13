@@ -17,7 +17,7 @@ namespace PeResources {
 
     public:
         explicit LibraryHandle(const wchar_t* file_path)
-                : handle(CHECK_ERROR(LoadLibrary(file_path))) {}
+                : handle(CHECK_ERROR(LoadLibraryEx(file_path, nullptr, LOAD_LIBRARY_AS_DATAFILE))) {}
 
         // prevent copying
         LibraryHandle(const LibraryHandle&) = delete;
