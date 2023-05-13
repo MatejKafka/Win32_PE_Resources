@@ -34,12 +34,20 @@ int wmain(int argc, wchar_t* argv[]) {
     }
 
     error_to_panic([&] {
-        auto resource_buffer = build_stringtable(1, argv[1]);
+        PeResources::ResourceUpdater updater{argv[1]};
 
-        PeResources::ResourceUpdater updater{L"./load_resources.exe"};
+        auto resource_buffer = build_stringtable(1, L"Hello there");
+        wprintf(L"Writing string resources at #1 and #17...\n");
         updater.update_resource(RT_STRING, 1, std::span(resource_buffer));
-        // this creates string with ID 17
+        // this creates string with ID 17 (first string in second 16 string block)
         updater.update_resource(RT_STRING, 2, std::span(resource_buffer));
+
+        std::wstring rcdata_resource = L"hello";
+        wprintf(L"Writing RCDATA resource with ID 1...\n");
+        updater.update_resource(RT_RCDATA, 1, std::span(rcdata_resource));
+        wprintf(L"Writing RCDATA resource called 'Name'...\n");
+        updater.update_resource(RT_RCDATA, L"Name", std::span(rcdata_resource));
+
         updater.commit();
     });
 }

@@ -19,7 +19,7 @@ std::optional<std::wstring_view> load_string_resource(size_t string_id) {
     }
 }
 
-int main() {
+int wmain() {
     error_to_panic([&] {
         for (auto i : {1, 17}) {
             auto str = load_string_resource(i);
