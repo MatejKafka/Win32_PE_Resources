@@ -6,8 +6,8 @@
 #include "util.hpp"
 
 namespace PeResources {
-    using RType = LPWSTR;
-    using RName = LPWSTR;
+    using RType = LPCWSTR;
+    using RName = LPCWSTR;
     using ResourceID = uint16_t;
 
 
@@ -22,6 +22,9 @@ namespace PeResources {
         // prevent copying
         LibraryHandle(const LibraryHandle&) = delete;
         LibraryHandle& operator=(const LibraryHandle&) = delete;
+        // prevent moving
+        LibraryHandle(const LibraryHandle&&) = delete;
+        LibraryHandle& operator=(const LibraryHandle&&) = delete;
 
         operator HMODULE() const { // NOLINT(google-explicit-constructor)
             return handle;
@@ -58,16 +61,30 @@ namespace PeResources {
 
         template<typename Callback>
         void enumerate_resources(RType resource_type, Callback callback) {
-            auto enum_fn = [](auto m, auto t, RName resource_name, LONG_PTR param) {
+            auto enum_fn = [](auto m, auto t, LPWSTR resource_name, LONG_PTR param) -> BOOL {
                 Callback& cb = *(Callback*)std::bit_cast<void*>(param);
                 cb(resource_name);
-                return 1; // continue enumeration
+                return TRUE; // continue enumeration
             };
 
             // pass callback through the extra param and restore it in the callback lambda
-            CHECK_ERROR_V(false, EnumResourceNamesW(handle, resource_type, enum_fn,
+            CHECK_ERROR_V(false, EnumResourceNames(handle, resource_type, enum_fn,
                                                     std::bit_cast<LONG_PTR>((void*)&callback)));
         }
+
+        template<typename Callback>
+        void enumerate_resource_types(Callback callback) {
+            auto enum_fn = [](auto m, LPWSTR resource_type, LONG_PTR param) -> BOOL {
+                Callback& cb = *(Callback*)std::bit_cast<void*>(param);
+                cb(resource_type);
+                return TRUE; // continue enumeration
+            };
+
+            // pass callback through the extra param and restore it in the callback lambda
+            CHECK_ERROR_V(false, EnumResourceTypes(handle, enum_fn,
+                                                    std::bit_cast<LONG_PTR>((void*)&callback)));
+        }
+
     };
 
 
